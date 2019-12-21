@@ -1,5 +1,3 @@
-import 'dart:async';
-
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flash_chat/constants.dart';
@@ -20,7 +18,6 @@ class _ChatScreenState extends State<ChatScreen> {
       var _currentUser = await _auth.currentUser();
       if (_currentUser != null) {
         currentUser = _currentUser;
-        print(currentUser.email);
       }
     } catch (e) {
       print(e);
@@ -42,7 +39,9 @@ class _ChatScreenState extends State<ChatScreen> {
           IconButton(
               icon: Icon(Icons.close),
               onPressed: () {
-                //Implement logout functionality
+                _auth.signOut().whenComplete(() {
+                  Navigator.pop(context);
+                });
               }),
         ],
         title: Text('⚡️Chat'),
