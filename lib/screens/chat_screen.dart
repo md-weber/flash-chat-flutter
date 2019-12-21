@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flash_chat/constants.dart';
 
 final _firestore = Firestore.instance;
+FirebaseUser currentUser;
 
 class ChatScreen extends StatefulWidget {
   static String route = "/chat_screen";
@@ -15,7 +16,6 @@ class ChatScreen extends StatefulWidget {
 class _ChatScreenState extends State<ChatScreen> {
   final _auth = FirebaseAuth.instance;
 
-  FirebaseUser currentUser;
   String message;
   TextEditingController messageController = TextEditingController();
 
@@ -106,10 +106,11 @@ class MessagesStream extends StatelessWidget {
             return Center(child: CircularProgressIndicator());
           }
 
-          final messages = snapshot.data.documents;
+          final messages = snapshot.data.documents.reversed;
 
           return Expanded(
             child: ListView(
+              reverse: true,
               padding: EdgeInsets.symmetric(
                 vertical: 10.0,
                 horizontal: 10.0,
@@ -117,7 +118,12 @@ class MessagesStream extends StatelessWidget {
               children: messages.map((message) {
                 String sender = message.data["sender"];
                 String text = message.data["text"];
-                return MessageBubble(text: text, sender: sender);
+                bool isCurrentUser = currentUser.email == sender;
+                return MessageBubble(
+                  text: text,
+                  sender: sender,
+                  isCurrentUser: isCurrentUser,
+                );
               }).toList(),
             ),
           );
@@ -130,17 +136,20 @@ class MessageBubble extends StatelessWidget {
     Key key,
     @required this.text,
     @required this.sender,
+    this.isCurrentUser,
   }) : super(key: key);
 
   final String text;
   final String sender;
+  final bool isCurrentUser;
 
   @override
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.all(10.0),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.end,
+        crossAxisAlignment:
+            isCurrentUser ? CrossAxisAlignment.end : CrossAxisAlignment.start,
         children: <Widget>[
           Padding(
             padding: EdgeInsets.symmetric(vertical: 2.0),
@@ -152,16 +161,28 @@ class MessageBubble extends StatelessWidget {
               ),
             ),
           ),
-          Material(
-            borderRadius: BorderRadius.circular(30.0),
-            color: Colors.lightBlueAccent,
-            elevation: 5.0,
-            child: Padding(
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 20.0, vertical: 10.0),
-              child: Text(
-                text,
-                style: TextStyle(fontSize: 15.0, color: Colors.white),
+          Padding(
+            padding: EdgeInsets.only(
+              right: isCurrentUser ? 8.0 : 0,
+              left: isCurrentUser ? 0 : 8.0,
+            ),
+            child: Material(
+              borderRadius: BorderRadius.only(
+                topLeft: Radius.circular(isCurrentUser ? 30.0 : 0),
+                bottomRight: Radius.circular(30.0),
+                bottomLeft: Radius.circular(30.0),
+                topRight: Radius.circular(isCurrentUser ? 0 : 30.0),
+              ),
+              color:
+                  isCurrentUser ? Colors.lightBlueAccent : Colors.orangeAccent,
+              elevation: 5.0,
+              child: Padding(
+                padding: const EdgeInsets.symmetric(
+                    horizontal: 20.0, vertical: 10.0),
+                child: Text(
+                  text,
+                  style: TextStyle(fontSize: 15.0, color: Colors.white),
+                ),
               ),
             ),
           ),
